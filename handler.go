@@ -8,22 +8,30 @@ import (
 
 type ButtonHandler func(s *discordgo.Session, i *discordgo.InteractionCreate)
 
-func AddButtonHandler(msg *discordgo.MessageSend, button *discordgo.Button, callback ButtonHandler) error {
-	var s, last int = 0, 0
-	actionRow := msg.Components[0].(discordgo.ActionsRow)
-	for _, b := range actionRow.Components {
-		button := b.(discordgo.Button)
+func AddButtonHandler(ses *discordgo.Session, msg *discordgo.MessageSend, button discordgo.Button, callback ButtonHandler) error {
+	if ses == nil || msg == nil {
+		return errors.New("session and message cannot be nil")
 	}
+
+	var s, last int = 0, 0
 	for idx, component := range msg.Components {
 		actionRow := component.(discordgo.ActionsRow)
 		s += len(actionRow.Components)
-		last = idx 
+		last = idx
 	}
 	if s == 25 {
-		return errors.New("Max number of buttons allowed")
+		return errors.New("max number of buttons allowed")
 	}
-	if last != 4 {
-		
+	if s%5 == 0 {
+		actionRow := msg.Components[last].(discordgo.ActionsRow)
+		actionRow.Components = append(actionRow.Components, button)
+		msg.Components[last] = actionRow
+	} else {
+		actionRow := msg.Components[last].(discordgo.ActionsRow)
+		actionRow.Components = append(actionRow.Components, button)
+		msg.Components = append(msg.Components[:last], actionRow)
 	}
-	return nil 
+	ses.AddHandler(callback)
+	return nil
 }
+

@@ -98,6 +98,9 @@ func (p *Paginator) defaultPaginatorHandler(s *discordgo.Session, i *discordgo.I
 	if i.MessageComponentData().ComponentType != discordgo.ButtonComponent || i.Message.ID != p.MessageID {
 		return
 	}
+	if !p.isAuthorized(i.User.ID) {
+		return 
+	}
 	p.Lock()
 	defer p.Unlock()
 	components := ButtonsMiddlePage()
@@ -200,18 +203,13 @@ func (p *Paginator) last() bool {
 }
 
 func (p *Paginator) isAuthorized(userID string) bool {
+	if len(p.AuthorizedToUse) == 0 {
+		return true 
+	}
 	for _, uID := range p.AuthorizedToUse {
 		if uID == userID {
 			return true
 		}
 	}
 	return false
-}
-
-func nextMessageInteractionCreateC(s *discordgo.Session) chan *discordgo.InteractionCreate {
-	out := make(chan *discordgo.InteractionCreate)
-	s.AddHandlerOnce(func(_ *discordgo.Session, e *discordgo.InteractionCreate) {
-		out <- e
-	})
-	return out
 }
