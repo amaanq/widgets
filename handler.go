@@ -2,7 +2,6 @@ package widgets
 
 import (
 	"errors"
-	"fmt"
 
 	"github.com/bwmarrin/discordgo"
 )
