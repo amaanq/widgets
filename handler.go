@@ -6,9 +6,7 @@ import (
 	"github.com/bwmarrin/discordgo"
 )
 
-type ButtonHandler func(s *discordgo.Session, i *discordgo.InteractionCreate)
-
-func AddButtonHandler(ses *discordgo.Session, msg *discordgo.MessageSend, button discordgo.Button, callback ButtonHandler) error {
+func AddButtonHandler(ses *discordgo.Session, msg *discordgo.MessageSend, button discordgo.Button, callback func(s *discordgo.Session, i *discordgo.InteractionCreate)) error {
 	if ses == nil || msg == nil {
 		return errors.New("session and message cannot be nil")
 	}
