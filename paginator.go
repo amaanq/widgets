@@ -1,21 +1,29 @@
 package widgets
 
 import (
+	"fmt"
 	"strconv"
 	"sync"
+	"time"
 
 	"github.com/bwmarrin/discordgo"
 )
 
 type Paginator struct {
 	sync.Mutex
-
-	Pages           []*discordgo.MessageEmbed
-	Index           int
-	DeleteWhenDone  bool
-	Loop            bool
-	AuthorizedToUse []string // user IDs
-	Session         *discordgo.Session
+	Pages              []*discordgo.MessageEmbed
+	Index              int
+	DeleteWhenDone     bool
+	Loop               bool
+	AuthorizedToUse    []string // user IDs
+	ChannelID          string
+	MessageID          string
+	Running            bool
+	Timeout            time.Duration
+	CurrentInteraction *discordgo.InteractionCreate
+	Close              chan bool
+	Session            *discordgo.Session
+	cancel             func()
 }
 
 // Add a variadic amount of user IDs to allow access to the paginator
@@ -36,19 +44,58 @@ func NewPaginator(s *discordgo.Session, embeds ...*discordgo.MessageEmbed) *Pagi
 		DeleteWhenDone:  false,
 		Loop:            false,
 		AuthorizedToUse: nil,
+		Running:         false,
 		Session:         s,
 	}
 }
 
-func (p *Paginator) addHandlers() {
+func (p *Paginator) Spawn(channelID string, content string) error {
+	if p.Running {
+		return fmt.Errorf("already running")
+	}
+
+	p.addHandler()
+	msg, err := p.Session.ChannelMessageSendComplex(channelID, &discordgo.MessageSend{
+		Content:    content,
+		Embed:      p.Pages[p.Index],
+		Components: ButtonsFirstPage(),
+	})
+
+	if err != nil {
+		p.cancel()
+		p.close()
+		return err
+	}
+
+	p.ChannelID = channelID
+	p.MessageID = msg.ID
+	p.Running = true
+
+	go func() {
+		time.Sleep(p.Timeout)
+		p.cancel()
+		p.close()
+	}()
+
+	return nil
+}
+
+func (p *Paginator) close() {
+	if p.DeleteWhenDone {
+		p.Session.ChannelMessageDelete(p.ChannelID, p.MessageID)
+	}
+	p = nil
+}
+
+func (p *Paginator) addHandler() {
 	p.Lock()
-	p.Session.AddHandler(p.defaultPaginatorHandler)
+	p.cancel = p.Session.AddHandler(p.defaultPaginatorHandler)
 	p.Unlock()
 }
 
 // This will only handle button component interactions for a paginator
 func (p *Paginator) defaultPaginatorHandler(s *discordgo.Session, i *discordgo.InteractionCreate) {
-	if i.MessageComponentData().ComponentType != discordgo.ButtonComponent {
+	if i.MessageComponentData().ComponentType != discordgo.ButtonComponent || i.Message.ID != p.MessageID {
 		return
 	}
 	p.Lock()
@@ -150,4 +197,21 @@ func (p *Paginator) first() bool {
 }
 func (p *Paginator) last() bool {
 	return p.Index == len(p.Pages)-1
+}
+
+func (p *Paginator) isAuthorized(userID string) bool {
+	for _, uID := range p.AuthorizedToUse {
+		if uID == userID {
+			return true
+		}
+	}
+	return false
+}
+
+func nextMessageInteractionCreateC(s *discordgo.Session) chan *discordgo.InteractionCreate {
+	out := make(chan *discordgo.InteractionCreate)
+	s.AddHandlerOnce(func(_ *discordgo.Session, e *discordgo.InteractionCreate) {
+		out <- e
+	})
+	return out
 }
