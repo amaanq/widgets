@@ -2,6 +2,7 @@ package widgets
 
 import (
 	"errors"
+	"fmt"
 
 	"github.com/bwmarrin/discordgo"
 )
@@ -22,7 +23,12 @@ func AddButtonHandler(ses *discordgo.Session, msg *discordgo.MessageSend, button
 	if s == 25 {
 		return errors.New("max number of buttons allowed")
 	}
-	if s%5 == 0 {
+	if s == 0 {
+		actionRow := discordgo.ActionsRow{
+			Components: []discordgo.MessageComponent{button},
+		}
+		msg.Components = []discordgo.MessageComponent{actionRow}
+	} else if s%5 == 0 {
 		actionRow := msg.Components[last].(discordgo.ActionsRow)
 		actionRow.Components = append(actionRow.Components, button)
 		msg.Components[last] = actionRow
@@ -34,4 +40,3 @@ func AddButtonHandler(ses *discordgo.Session, msg *discordgo.MessageSend, button
 	ses.AddHandler(callback)
 	return nil
 }
-
