@@ -108,7 +108,7 @@ func (p *Paginator) defaultPaginatorHandler(s *discordgo.Session, i *discordgo.I
 			components = ButtonsLastPage()
 		}
 		s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
-			Type: discordgo.InteractionResponseChannelMessageWithSource,
+			Type: discordgo.InteractionResponseUpdateMessage,
 			Data: &discordgo.InteractionResponseData{
 				Content:    i.Message.Content,
 				Components: components,
@@ -120,7 +120,7 @@ func (p *Paginator) defaultPaginatorHandler(s *discordgo.Session, i *discordgo.I
 		p.Index = len(p.Pages) - 1
 		components = ButtonsLastPage()
 		s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
-			Type: discordgo.InteractionResponseChannelMessageWithSource,
+			Type: discordgo.InteractionResponseUpdateMessage,
 			Data: &discordgo.InteractionResponseData{
 				Content:    i.Message.Content,
 				Components: components,
@@ -132,7 +132,7 @@ func (p *Paginator) defaultPaginatorHandler(s *discordgo.Session, i *discordgo.I
 		p.Index = 0
 		components = ButtonsFirstPage()
 		s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
-			Type: discordgo.InteractionResponseChannelMessageWithSource,
+			Type: discordgo.InteractionResponseUpdateMessage,
 			Data: &discordgo.InteractionResponseData{
 				Content:    i.Message.Content,
 				Components: components,
@@ -146,7 +146,7 @@ func (p *Paginator) defaultPaginatorHandler(s *discordgo.Session, i *discordgo.I
 			components = ButtonsFirstPage()
 		}
 		s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
-			Type: discordgo.InteractionResponseChannelMessageWithSource,
+			Type: discordgo.InteractionResponseUpdateMessage,
 			Data: &discordgo.InteractionResponseData{
 				Content:    i.Message.Content,
 				Components: components,
@@ -179,7 +179,7 @@ func (p *Paginator) defaultPaginatorHandler(s *discordgo.Session, i *discordgo.I
 		}
 		p.Index = n
 		s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
-			Type: discordgo.InteractionResponseChannelMessageWithSource,
+			Type: discordgo.InteractionResponseUpdateMessage,
 			Data: &discordgo.InteractionResponseData{
 				Content:    i.Message.Content,
 				Components: components,
