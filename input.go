@@ -7,12 +7,8 @@ import (
 	"github.com/bwmarrin/discordgo"
 )
 
-func GetInput(s *discordgo.Session, i *discordgo.InteractionCreate) (string, error) {
+func GetInput(s *discordgo.Session, i *discordgo.InteractionCreate, message string) (string, error) {
 	var content string
-	switch i.MessageComponentData().CustomID {
-	case "1234":
-		content = fmt.Sprintf("%s, enter the page you'd like to go to", i.Member.Mention())
-	}
 	msg, err := s.ChannelMessageSend(i.ChannelID, content)
 	if err != nil {
 		return "", err

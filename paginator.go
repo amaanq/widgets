@@ -11,7 +11,7 @@ import (
 
 type Paginator struct {
 	sync.Mutex
-	Pages              []*discordgo.MessageEmbed
+	Pages              []*discordgo.MessageSend
 	Index              int
 	DeleteWhenDone     bool
 	Loop               bool
@@ -34,12 +34,12 @@ func (p *Paginator) AllowUsers(userIDs ...string) {
 }
 
 // Pass in your discord bot session and at least one discord embed.
-func NewPaginator(s *discordgo.Session, embeds ...*discordgo.MessageEmbed) *Paginator {
-	if len(embeds) == 0 {
+func NewPaginator(s *discordgo.Session, messages ...*discordgo.MessageSend) *Paginator {
+	if len(messages) == 0 {
 		return nil
 	}
 	return &Paginator{
-		Pages:           embeds,
+		Pages:           messages,
 		Index:           0,
 		DeleteWhenDone:  false,
 		Loop:            false,
@@ -49,17 +49,13 @@ func NewPaginator(s *discordgo.Session, embeds ...*discordgo.MessageEmbed) *Pagi
 	}
 }
 
-func (p *Paginator) Spawn(channelID string, content string) error {
+func (p *Paginator) Spawn(channelID string) error {
 	if p.Running {
 		return fmt.Errorf("already running")
 	}
 
 	p.addHandler()
-	msg, err := p.Session.ChannelMessageSendComplex(channelID, &discordgo.MessageSend{
-		Content:    content,
-		Embed:      p.Pages[p.Index],
-		Components: ButtonsFirstPage(),
-	})
+	msg, err := p.Session.ChannelMessageSendComplex(channelID, p.Pages[p.Index])
 
 	if err != nil {
 		p.cancel()
@@ -99,7 +95,7 @@ func (p *Paginator) defaultPaginatorHandler(s *discordgo.Session, i *discordgo.I
 		return
 	}
 	if !p.isAuthorized(i.User.ID) {
-		return 
+		return
 	}
 	p.Lock()
 	defer p.Unlock()
@@ -110,36 +106,48 @@ func (p *Paginator) defaultPaginatorHandler(s *discordgo.Session, i *discordgo.I
 		if p.last() {
 			components = ButtonsLastPage()
 		}
+		nextMessage := p.Pages[p.Index]
 		s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
 			Type: discordgo.InteractionResponseUpdateMessage,
 			Data: &discordgo.InteractionResponseData{
-				Content:    i.Message.Content,
-				Components: components,
-				Embeds:     []*discordgo.MessageEmbed{p.Pages[p.Index]},
+				TTS:             nextMessage.TTS,
+				Content:         nextMessage.Content,
+				Components:      components,
+				Embeds:          nextMessage.Embeds,
+				AllowedMentions: nextMessage.AllowedMentions,
+				Files:           nextMessage.Files,
 			},
 		})
 		return
 	case ">>":
 		p.Index = len(p.Pages) - 1
 		components = ButtonsLastPage()
+		nextMessage := p.Pages[p.Index]
 		s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
 			Type: discordgo.InteractionResponseUpdateMessage,
 			Data: &discordgo.InteractionResponseData{
-				Content:    i.Message.Content,
-				Components: components,
-				Embeds:     []*discordgo.MessageEmbed{p.Pages[p.Index]},
+				TTS:             nextMessage.TTS,
+				Content:         nextMessage.Content,
+				Components:      components,
+				Embeds:          nextMessage.Embeds,
+				AllowedMentions: nextMessage.AllowedMentions,
+				Files:           nextMessage.Files,
 			},
 		})
 		return
 	case "<<":
 		p.Index = 0
 		components = ButtonsFirstPage()
+		nextMessage := p.Pages[p.Index]
 		s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
 			Type: discordgo.InteractionResponseUpdateMessage,
 			Data: &discordgo.InteractionResponseData{
-				Content:    i.Message.Content,
-				Components: components,
-				Embeds:     []*discordgo.MessageEmbed{p.Pages[p.Index]},
+				TTS:             nextMessage.TTS,
+				Content:         nextMessage.Content,
+				Components:      components,
+				Embeds:          nextMessage.Embeds,
+				AllowedMentions: nextMessage.AllowedMentions,
+				Files:           nextMessage.Files,
 			},
 		})
 		return
@@ -148,17 +156,21 @@ func (p *Paginator) defaultPaginatorHandler(s *discordgo.Session, i *discordgo.I
 		if p.first() {
 			components = ButtonsFirstPage()
 		}
+		nextMessage := p.Pages[p.Index]
 		s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
 			Type: discordgo.InteractionResponseUpdateMessage,
 			Data: &discordgo.InteractionResponseData{
-				Content:    i.Message.Content,
-				Components: components,
-				Embeds:     []*discordgo.MessageEmbed{p.Pages[p.Index]},
+				TTS:             nextMessage.TTS,
+				Content:         nextMessage.Content,
+				Components:      components,
+				Embeds:          nextMessage.Embeds,
+				AllowedMentions: nextMessage.AllowedMentions,
+				Files:           nextMessage.Files,
 			},
 		})
 		return
 	case "1234":
-		response, err := GetInput(s, i)
+		response, err := GetInput(s, i, fmt.Sprintf("%s, enter the page you'd like to go to (from %d to %d inclusive)", i.Member.Mention(), 1, len(p.Pages)))
 		if err != nil {
 			s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
 				Type: discordgo.InteractionResponseChannelMessageWithSource,
@@ -170,6 +182,17 @@ func (p *Paginator) defaultPaginatorHandler(s *discordgo.Session, i *discordgo.I
 			return
 		}
 		n, err := strconv.Atoi(response)
+		n-- // 0 indexed
+		if p.outOfBounds(n) {
+			s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
+				Type: discordgo.InteractionResponseChannelMessageWithSource,
+				Data: &discordgo.InteractionResponseData{
+					Content: "That's too low or high of a page number, try something smaller!",
+					Flags:   64,
+				},
+			})
+			return 
+		}
 		if err != nil {
 			s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
 				Type: discordgo.InteractionResponseChannelMessageWithSource,
@@ -181,17 +204,21 @@ func (p *Paginator) defaultPaginatorHandler(s *discordgo.Session, i *discordgo.I
 			return
 		}
 		p.Index = n
+		nextMessage := p.Pages[p.Index]
 		s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
 			Type: discordgo.InteractionResponseUpdateMessage,
 			Data: &discordgo.InteractionResponseData{
-				Content:    i.Message.Content,
-				Components: components,
-				Embeds:     []*discordgo.MessageEmbed{p.Pages[p.Index]},
+				TTS:             nextMessage.TTS,
+				Content:         nextMessage.Content,
+				Components:      components,
+				Embeds:          nextMessage.Embeds,
+				AllowedMentions: nextMessage.AllowedMentions,
+				Files:           nextMessage.Files,
 			},
 		})
 		return
 	case "delete":
-		s.ChannelMessageDelete(i.Message.ChannelID, i.Message.ID) // if it errors :shrug:
+		s.ChannelMessageDelete(i.Message.ChannelID, i.Message.ID) 
 	}
 }
 
@@ -204,7 +231,7 @@ func (p *Paginator) last() bool {
 
 func (p *Paginator) isAuthorized(userID string) bool {
 	if len(p.AuthorizedToUse) == 0 {
-		return true 
+		return true
 	}
 	for _, uID := range p.AuthorizedToUse {
 		if uID == userID {
@@ -212,4 +239,8 @@ func (p *Paginator) isAuthorized(userID string) bool {
 		}
 	}
 	return false
+}
+
+func (p *Paginator) outOfBounds(i int) bool {
+	return i >= len(p.Pages) || i < 0 
 }
