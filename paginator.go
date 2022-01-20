@@ -66,7 +66,9 @@ func (p *Paginator) Spawn(channelID string) error {
 	if p.Running {
 		return fmt.Errorf("already running")
 	}
-
+	if len(p.Pages) < 1 {
+		return fmt.Errorf("a minimum of one page is required")
+	}
 	p.addHandler()
 	p.Pages[0].Components = ButtonsFirstPage()
 	if len(p.Pages) == 1 {
