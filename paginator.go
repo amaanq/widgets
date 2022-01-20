@@ -37,18 +37,16 @@ func (p *Paginator) AllowUsers(userIDs ...string) {
 
 // Pass in your discord bot session and at least one discord embed.
 func NewPaginator(s *discordgo.Session, messages ...*discordgo.MessageSend) *Paginator {
-	if len(messages) == 0 {
-		return nil
-	}
 	return &Paginator{
-		Pages:           messages,
-		Index:           0,
-		DeleteWhenDone:  false,
-		Loop:            false,
-		AuthorizedToUse: nil,
-		Running:         false,
-		Session:         s,
-		errHandler:      nil,
+		Pages:               messages,
+		Index:               0,
+		DeleteWhenDone:      false,
+		Loop:                false,
+		AuthorizedToUse:     nil,
+		Running:             false,
+		Session:             s,
+		customWidgetButtons: []func() error{},
+		errHandler:          nil,
 	}
 }
 
