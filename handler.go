@@ -34,6 +34,10 @@ func AddButtonHandler(ses *discordgo.Session, msg *discordgo.MessageSend, button
 		actionRow.Components = append(actionRow.Components, button)
 		msg.Components = append(msg.Components[:last], actionRow)
 	}
-	ses.AddHandler(callback)
+	ses.AddHandler(func(s *discordgo.Session, i *discordgo.InteractionCreate) {
+		if i.MessageComponentData().CustomID == button.CustomID {
+			callback(s, i)
+		}
+	})
 	return nil
 }
