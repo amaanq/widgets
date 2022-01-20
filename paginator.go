@@ -55,6 +55,9 @@ func (p *Paginator) Spawn(channelID string) error {
 	}
 
 	p.addHandler()
+	if len(p.Pages) > 1 {
+		p.Pages[0].Components = ButtonsFirstPage()
+	}
 	msg, err := p.Session.ChannelMessageSendComplex(channelID, p.Pages[p.Index])
 
 	if err != nil {
@@ -94,7 +97,7 @@ func (p *Paginator) defaultPaginatorHandler(s *discordgo.Session, i *discordgo.I
 	if i.MessageComponentData().ComponentType != discordgo.ButtonComponent || i.Message.ID != p.MessageID {
 		return
 	}
-	if !p.isAuthorized(i.User.ID) {
+	if !p.isAuthorized(i.Member.User.ID) {
 		return
 	}
 	p.Lock()
@@ -191,7 +194,7 @@ func (p *Paginator) defaultPaginatorHandler(s *discordgo.Session, i *discordgo.I
 					Flags:   64,
 				},
 			})
-			return 
+			return
 		}
 		if err != nil {
 			s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
@@ -218,7 +221,7 @@ func (p *Paginator) defaultPaginatorHandler(s *discordgo.Session, i *discordgo.I
 		})
 		return
 	case "delete":
-		s.ChannelMessageDelete(i.Message.ChannelID, i.Message.ID) 
+		s.ChannelMessageDelete(i.Message.ChannelID, i.Message.ID)
 	}
 }
 
@@ -242,5 +245,5 @@ func (p *Paginator) isAuthorized(userID string) bool {
 }
 
 func (p *Paginator) outOfBounds(i int) bool {
-	return i >= len(p.Pages) || i < 0 
+	return i >= len(p.Pages) || i < 0
 }
