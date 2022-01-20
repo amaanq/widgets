@@ -52,6 +52,12 @@ func NewPaginator(s *discordgo.Session, messages ...*discordgo.MessageSend) *Pag
 	}
 }
 
+func (p *Paginator) AddPages(messages ...*discordgo.MessageSend) {
+	p.Lock()
+	p.Pages = append(p.Pages, messages...)
+	p.Unlock()
+}
+
 func (p *Paginator) SetErrHandler(errfunc func(e error)) {
 	p.Lock()
 	p.errHandler = errfunc
