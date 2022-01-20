@@ -11,19 +11,21 @@ import (
 
 type Paginator struct {
 	sync.Mutex
-	Pages              []*discordgo.MessageSend
-	Index              int
-	DeleteWhenDone     bool
-	Loop               bool
-	AuthorizedToUse    []string // user IDs
-	ChannelID          string
-	MessageID          string
-	Running            bool
-	Timeout            time.Duration
-	CurrentInteraction *discordgo.InteractionCreate
-	Close              chan bool
-	Session            *discordgo.Session
-	cancel             func()
+	Pages               []*discordgo.MessageSend
+	Index               int
+	DeleteWhenDone      bool
+	Loop                bool
+	AuthorizedToUse     []string // user IDs
+	ChannelID           string
+	MessageID           string
+	Running             bool
+	Timeout             time.Duration
+	CurrentInteraction  *discordgo.InteractionCreate
+	Close               chan bool
+	Session             *discordgo.Session
+	cancel              func()
+	customWidgetButtons []func() error
+	errHandler          func(error)
 }
 
 // Add a variadic amount of user IDs to allow access to the paginator
@@ -46,7 +48,14 @@ func NewPaginator(s *discordgo.Session, messages ...*discordgo.MessageSend) *Pag
 		AuthorizedToUse: nil,
 		Running:         false,
 		Session:         s,
+		errHandler:      nil,
 	}
+}
+
+func (p *Paginator) SetErrHandler(errfunc func(e error)) {
+	p.Lock()
+	p.errHandler = errfunc
+	p.Unlock()
 }
 
 func (p *Paginator) Spawn(channelID string) error {
@@ -59,6 +68,16 @@ func (p *Paginator) Spawn(channelID string) error {
 	if len(p.Pages) == 1 {
 		p.Pages[0].Components = ButtonsDisabled()
 	}
+
+	for _, fnc := range p.customWidgetButtons {
+		err := fnc()
+		if err != nil {
+			if p.errHandler != nil {
+				p.errHandler(err)
+			}
+		}
+	}
+
 	msg, err := p.Session.ChannelMessageSendComplex(channelID, p.Pages[p.Index])
 
 	if err != nil {
