@@ -59,17 +59,19 @@ func (p *Paginator) Spawn(channelID string) error {
 		p.Pages[0].Components = ButtonsFirstPage()
 	} else {
 		if delete {
-			p.Pages[0].Components = discordgo.ActionsRow{
-				Components: []discordgo.MessageComponent{
-					discordgo.Button{
-						Style: 4,
-						Emoji: discordgo.ComponentEmoji{
-							Name: "❌",
+			p.Pages[0].Components = []discordgo.MessageComponent{
+				discordgo.ActionsRow{
+					Components: []discordgo.MessageComponent{
+						discordgo.Button{
+							Style: 4,
+							Emoji: discordgo.ComponentEmoji{
+								Name: "❌",
+							},
+							CustomID: "delete",
 						},
-						CustomID: "delete",
 					},
 				},
-			
+			}
 		}
 	}
 	msg, err := p.Session.ChannelMessageSendComplex(channelID, p.Pages[p.Index])
