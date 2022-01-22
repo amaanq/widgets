@@ -34,7 +34,15 @@ func GetInputFromInteraction(s *discordgo.Session, channelID, userID string, mes
 	if err != nil {
 		return "", err
 	}
+
 	defer s.ChannelMessageDelete(msg.ChannelID, msg.ID)
+
+	timeoutChan := make(chan int)
+	go func() {
+		time.Sleep(timeout)
+		timeoutChan <- 0
+	}()
+
 	for {
 		select {
 		case i := <-nextInteractionCreateC(s):
@@ -42,7 +50,7 @@ func GetInputFromInteraction(s *discordgo.Session, channelID, userID string, mes
 				continue
 			}
 			return i.MessageComponentData().CustomID, nil
-		case <-time.After(timeout):
+		case <-timeoutChan:
 			return "", fmt.Errorf("timed out")
 		}
 	}
