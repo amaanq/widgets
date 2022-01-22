@@ -199,7 +199,16 @@ func (p *Paginator) defaultPaginatorHandler(s *discordgo.Session, i *discordgo.I
 		})
 		return
 	case "1234":
-		response, err := GetInput(s, i, fmt.Sprintf("%s, enter the page you'd like to go to (from %d to %d inclusive)", i.Member.Mention(), 1, len(p.Pages)))
+		if !p.isAuthorized(i.Member.User.ID) {
+			s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
+				Type: discordgo.InteractionResponseChannelMessageWithSource,
+				Data: &discordgo.InteractionResponseData{
+					Content: "Oops! This command wasn't from you!",
+					Flags:   64,
+				},
+			})
+		}
+		response, err := GetInput(s, i, fmt.Sprintf("%s, enter the page you'd like to go to (from %d to %d inclusive)", i.Member.Mention(), 1, len(p.Pages)), time.Second*30)
 		if err != nil {
 			s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
 				Type: discordgo.InteractionResponseChannelMessageWithSource,
