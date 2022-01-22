@@ -35,7 +35,8 @@ func GetInputFromInteraction(s *discordgo.Session, channelID, userID string, mes
 		return "", err
 	}
 
-	defer s.ChannelMessageDelete(msg.ChannelID, msg.ID)
+	components := msg.Components[0].(discordgo.ActionsRow).Components
+	newComponents := []discordgo.MessageComponent{}
 
 	timeoutChan := make(chan int)
 	go func() {
@@ -49,6 +50,24 @@ func GetInputFromInteraction(s *discordgo.Session, channelID, userID string, mes
 			if i.Member.User.ID != userID {
 				continue
 			}
+			for _, comp := range components {
+				button := comp.(discordgo.Button)
+				if i.MessageComponentData().CustomID == button.CustomID {
+					button.Style = discordgo.SuccessButton
+				}
+				button.Disabled = true
+				newComponents = append(newComponents, button)
+			}
+			defer s.ChannelMessageEditComplex(&discordgo.MessageEdit{
+				Content: &msg.Content,
+				Components: []discordgo.MessageComponent{discordgo.ActionsRow{
+					Components: newComponents,
+				}},
+				Embeds: msg.Embeds,
+
+				ID:      msg.ID,
+				Channel: msg.ChannelID,
+			})
 			return i.MessageComponentData().CustomID, nil
 		case <-timeoutChan:
 			return "", fmt.Errorf("timed out")
