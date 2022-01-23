@@ -282,3 +282,11 @@ func (p *Paginator) isAuthorized(userID string) bool {
 func (p *Paginator) outOfBounds(i int) bool {
 	return i >= len(p.Pages) || i < 0
 }
+
+func (p *Paginator) SetPageFooters() {
+	for index, msg := range p.Pages {
+		msg.Embeds[0].Footer = &discordgo.MessageEmbedFooter{
+			Text: fmt.Sprintf("#[%d / %d] %s", index+1, len(p.Pages), msg.Embeds[0].Footer),
+		}
+	}
+}
