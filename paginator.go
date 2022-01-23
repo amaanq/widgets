@@ -285,8 +285,12 @@ func (p *Paginator) outOfBounds(i int) bool {
 
 func (p *Paginator) SetPageFooters() {
 	for index, msg := range p.Pages {
+		txt := fmt.Sprintf("#[%d / %d]", index+1, len(p.Pages))
+		if msg.Embeds[0].Footer != nil {
+			txt += msg.Embeds[0].Footer.Text
+		}
 		msg.Embeds[0].Footer = &discordgo.MessageEmbedFooter{
-			Text: fmt.Sprintf("#[%d / %d] %s", index+1, len(p.Pages), msg.Embeds[0].Footer),
+			Text: txt,
 		}
 	}
 }
