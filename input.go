@@ -72,11 +72,9 @@ func GetInputFromInteraction(s *discordgo.Session, channelID, userID string, mes
 				currActionRow = discordgo.ActionsRow{}
 			}
 			defer s.ChannelMessageEditComplex(&discordgo.MessageEdit{
-				Content: &msg.Content,
-				Components: []discordgo.MessageComponent{discordgo.ActionsRow{
-					Components: mainComponents,
-				}},
-				Embeds: msg.Embeds,
+				Content:    &msg.Content,
+				Components: mainComponents,
+				Embeds:     msg.Embeds,
 
 				ID:      msg.ID,
 				Channel: msg.ChannelID,
@@ -96,11 +94,9 @@ func GetInputFromInteraction(s *discordgo.Session, channelID, userID string, mes
 				currActionRow = discordgo.ActionsRow{}
 			}
 			defer s.ChannelMessageEditComplex(&discordgo.MessageEdit{
-				Content: &msg.Content,
-				Components: []discordgo.MessageComponent{discordgo.ActionsRow{
-					Components: mainComponents,
-				}},
-				Embeds: msg.Embeds,
+				Content:    &msg.Content,
+				Components: mainComponents,
+				Embeds:     msg.Embeds,
 
 				ID:      msg.ID,
 				Channel: msg.ChannelID,
