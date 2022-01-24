@@ -38,6 +38,9 @@ func GetInputFromInteraction(s *discordgo.Session, channelID, userID string, mes
 	//components := msg.Components[0].(*discordgo.ActionsRow).Components
 	newComponents := []discordgo.MessageComponent{}
 
+	currActionRow := discordgo.ActionsRow{}
+	mainComponents := []discordgo.MessageComponent{}
+
 	timeoutChan := make(chan int)
 	go func() {
 		time.Sleep(timeout)
@@ -63,11 +66,15 @@ func GetInputFromInteraction(s *discordgo.Session, channelID, userID string, mes
 					button.Disabled = true
 					newComponents = append(newComponents, button)
 				}
+				currActionRow.Components = append(currActionRow.Components, newComponents...)
+				mainComponents = append(mainComponents, currActionRow)
+				newComponents = []discordgo.MessageComponent{}
+				currActionRow = discordgo.ActionsRow{}
 			}
 			defer s.ChannelMessageEditComplex(&discordgo.MessageEdit{
 				Content: &msg.Content,
 				Components: []discordgo.MessageComponent{discordgo.ActionsRow{
-					Components: newComponents,
+					Components: mainComponents,
 				}},
 				Embeds: msg.Embeds,
 
@@ -83,11 +90,15 @@ func GetInputFromInteraction(s *discordgo.Session, channelID, userID string, mes
 					button.Disabled = true
 					newComponents = append(newComponents, button)
 				}
+				currActionRow.Components = append(currActionRow.Components, newComponents...)
+				mainComponents = append(mainComponents, currActionRow)
+				newComponents = []discordgo.MessageComponent{}
+				currActionRow = discordgo.ActionsRow{}
 			}
 			defer s.ChannelMessageEditComplex(&discordgo.MessageEdit{
 				Content: &msg.Content,
 				Components: []discordgo.MessageComponent{discordgo.ActionsRow{
-					Components: newComponents,
+					Components: mainComponents,
 				}},
 				Embeds: msg.Embeds,
 
