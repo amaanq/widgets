@@ -35,7 +35,7 @@ func GetInputFromInteraction(s *discordgo.Session, channelID, userID string, mes
 		return "", err
 	}
 
-	components := msg.Components[0].(*discordgo.ActionsRow).Components
+	//components := msg.Components[0].(*discordgo.ActionsRow).Components
 	newComponents := []discordgo.MessageComponent{}
 
 	timeoutChan := make(chan int)
@@ -53,13 +53,16 @@ func GetInputFromInteraction(s *discordgo.Session, channelID, userID string, mes
 			s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
 				Type: discordgo.InteractionResponseChannelMessageWithSource,
 			})
-			for _, comp := range components {
-				button := comp.(*discordgo.Button)
-				if i.MessageComponentData().CustomID == button.CustomID {
-					button.Style = discordgo.SuccessButton
+			for _, mainComponent := range msg.Components {
+				components := mainComponent.(*discordgo.ActionsRow).Components
+				for _, comp := range components {
+					button := comp.(*discordgo.Button)
+					if i.MessageComponentData().CustomID == button.CustomID {
+						button.Style = discordgo.SuccessButton
+					}
+					button.Disabled = true
+					newComponents = append(newComponents, button)
 				}
-				button.Disabled = true
-				newComponents = append(newComponents, button)
 			}
 			defer s.ChannelMessageEditComplex(&discordgo.MessageEdit{
 				Content: &msg.Content,
@@ -73,10 +76,13 @@ func GetInputFromInteraction(s *discordgo.Session, channelID, userID string, mes
 			})
 			return i.MessageComponentData().CustomID, nil
 		case <-timeoutChan:
-			for _, comp := range components {
-				button := comp.(*discordgo.Button)
-				button.Disabled = true
-				newComponents = append(newComponents, button)
+			for _, mainComponent := range msg.Components {
+				components := mainComponent.(*discordgo.ActionsRow).Components
+				for _, comp := range components {
+					button := comp.(*discordgo.Button)
+					button.Disabled = true
+					newComponents = append(newComponents, button)
+				}
 			}
 			defer s.ChannelMessageEditComplex(&discordgo.MessageEdit{
 				Content: &msg.Content,
