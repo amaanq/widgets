@@ -8,8 +8,7 @@ import (
 )
 
 func GetInput(s *discordgo.Session, i *discordgo.InteractionCreate, message string, timeout time.Duration) (string, error) {
-	var content string
-	msg, err := s.ChannelMessageSend(i.ChannelID, content)
+	msg, err := s.ChannelMessageSend(i.ChannelID, message)
 	if err != nil {
 		return "", err
 	}
