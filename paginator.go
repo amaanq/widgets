@@ -208,7 +208,7 @@ func (p *Paginator) defaultPaginatorHandler(s *discordgo.Session, i *discordgo.I
 				},
 			})
 		}
-		response, err := GetInput(s, i, fmt.Sprintf("%s, enter the page you'd like to go to (from %d to %d inclusive)", i.Member.Mention(), 1, len(p.Pages)), time.Second*30)
+		response, err := GetInput(s, i.ChannelID, i.Member.User.ID, fmt.Sprintf("%s, enter the page you'd like to go to (from %d to %d inclusive)", i.Member.Mention(), 1, len(p.Pages)), time.Second*30)
 		if err != nil {
 			s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
 				Type: discordgo.InteractionResponseChannelMessageWithSource,
