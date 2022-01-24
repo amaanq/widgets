@@ -7,8 +7,8 @@ import (
 	"github.com/bwmarrin/discordgo"
 )
 
-func GetInput(s *discordgo.Session, i *discordgo.InteractionCreate, message string, timeout time.Duration) (string, error) {
-	msg, err := s.ChannelMessageSend(i.ChannelID, message)
+func GetInput(s *discordgo.Session, channelID, userID, message string, timeout time.Duration) (string, error) {
+	msg, err := s.ChannelMessageSend(channelID, message)
 	if err != nil {
 		return "", err
 	}
@@ -16,7 +16,7 @@ func GetInput(s *discordgo.Session, i *discordgo.InteractionCreate, message stri
 	for {
 		select {
 		case usermsg := <-nextMessageCreateC(s):
-			if usermsg.Author.ID != i.Member.User.ID {
+			if usermsg.Author.ID != userID {
 				continue
 			}
 			s.ChannelMessageDelete(usermsg.ChannelID, usermsg.ID)
