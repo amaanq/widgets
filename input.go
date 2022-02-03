@@ -49,7 +49,7 @@ func GetInputFromInteraction(s *discordgo.Session, channelID, userID string, mes
 	for {
 		select {
 		case i := <-nextInteractionCreateC(s):
-			if i.Member.User.ID != userID {
+			if i.Member.User.ID != userID || i.Message.ID != msg.ID {
 				continue
 			}
 			s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
