@@ -6,7 +6,6 @@ import (
 
 var (
 	// []discordgo.MessageComponent{
-	delete         = false
 	DefaultButtons = discordgo.ActionsRow{
 		Components: []discordgo.MessageComponent{
 			discordgo.Button{
@@ -50,7 +49,6 @@ var (
 
 func ButtonsWithoutDelete() (C []discordgo.MessageComponent) {
 	C = []discordgo.MessageComponent{DefaultButtons}
-	delete = false
 	return
 }
 
@@ -66,11 +64,10 @@ func ButtonsWithDelete() (C []discordgo.MessageComponent) {
 			},
 		},
 	})
-	delete = true
 	return
 }
 
-func ButtonsDisabled() (C []discordgo.MessageComponent) {
+func ButtonsDisabled(delete bool) (C []discordgo.MessageComponent) {
 	components := []discordgo.MessageComponent{}
 	for _, button := range DefaultButtons.Components {
 		b := button.(discordgo.Button)
@@ -100,7 +97,7 @@ func ButtonsDisabled() (C []discordgo.MessageComponent) {
 	return
 }
 
-func ButtonsFirstPage() (C []discordgo.MessageComponent) {
+func ButtonsFirstPage(delete bool) (C []discordgo.MessageComponent) {
 	components := []discordgo.MessageComponent{}
 	for _, button := range DefaultButtons.Components {
 		b := button.(discordgo.Button)
@@ -130,7 +127,7 @@ func ButtonsFirstPage() (C []discordgo.MessageComponent) {
 	return
 }
 
-func ButtonsMiddlePage() (C []discordgo.MessageComponent) {
+func ButtonsMiddlePage(delete bool) (C []discordgo.MessageComponent) {
 	C = []discordgo.MessageComponent{DefaultButtons}
 	if delete {
 		C = append(C, discordgo.ActionsRow{
@@ -148,7 +145,7 @@ func ButtonsMiddlePage() (C []discordgo.MessageComponent) {
 	return
 }
 
-func ButtonsLastPage() (C []discordgo.MessageComponent) {
+func ButtonsLastPage(delete bool) (C []discordgo.MessageComponent) {
 	components := []discordgo.MessageComponent{}
 	for _, button := range DefaultButtons.Components {
 		b := button.(discordgo.Button)

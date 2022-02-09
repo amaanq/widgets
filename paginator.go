@@ -26,6 +26,7 @@ type Paginator struct {
 	cancel              func()
 	customWidgetButtons []func() error
 	errHandler          func(error)
+	deleteButton        bool
 }
 
 // Add a variadic amount of user IDs to allow access to the paginator
@@ -47,21 +48,39 @@ func NewPaginator(s *discordgo.Session, messages ...*discordgo.MessageSend) *Pag
 		Session:             s,
 		customWidgetButtons: []func() error{},
 		errHandler:          nil,
+		deleteButton:        false,
 	}
 }
 
+// Add a slice of discordgo MessageSends to iterate through with the paginator, order will be retained
 func (p *Paginator) AddPages(messages ...*discordgo.MessageSend) {
 	p.Lock()
 	p.Pages = append(p.Pages, messages...)
 	p.Unlock()
 }
 
+// Adds a delete button that will delete the message when clicked
+func (p *Paginator) AddDeleteButton() {
+	p.Lock()
+	p.deleteButton = true
+	p.Unlock()
+}
+
+// Removes the delete button if it was added before with Paginator.AddDeleteButton()
+func (p *Paginator) RemoveDeleteButton() {
+	p.Lock()
+	p.deleteButton = false
+	p.Unlock()
+}
+
+// Error function to be invoked on an error from a custom widget handler
 func (p *Paginator) SetErrHandler(errfunc func(e error)) {
 	p.Lock()
 	p.errHandler = errfunc
 	p.Unlock()
 }
 
+// Starts the paginator as a goroutine
 func (p *Paginator) Spawn(channelID string) error {
 	if p.Running {
 		return fmt.Errorf("already running")
@@ -70,9 +89,9 @@ func (p *Paginator) Spawn(channelID string) error {
 		return fmt.Errorf("a minimum of one page is required")
 	}
 	p.addHandler()
-	p.Pages[0].Components = ButtonsFirstPage()
+	p.Pages[0].Components = ButtonsFirstPage(p.deleteButton)
 	if len(p.Pages) == 1 {
-		p.Pages[0].Components = ButtonsDisabled()
+		p.Pages[0].Components = ButtonsDisabled(p.deleteButton)
 	}
 
 	for _, fnc := range p.customWidgetButtons {
@@ -128,12 +147,12 @@ func (p *Paginator) defaultPaginatorHandler(s *discordgo.Session, i *discordgo.I
 	}
 	p.Lock()
 	defer p.Unlock()
-	components := ButtonsMiddlePage()
+	components := ButtonsMiddlePage(p.deleteButton)
 	switch i.MessageComponentData().CustomID {
 	case ">":
 		p.Index++
 		if p.last() {
-			components = ButtonsLastPage()
+			components = ButtonsLastPage(p.deleteButton)
 		}
 		nextMessage := p.Pages[p.Index]
 		s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
@@ -150,7 +169,7 @@ func (p *Paginator) defaultPaginatorHandler(s *discordgo.Session, i *discordgo.I
 		return
 	case ">>":
 		p.Index = len(p.Pages) - 1
-		components = ButtonsLastPage()
+		components = ButtonsLastPage(p.deleteButton)
 		nextMessage := p.Pages[p.Index]
 		s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
 			Type: discordgo.InteractionResponseUpdateMessage,
@@ -166,7 +185,7 @@ func (p *Paginator) defaultPaginatorHandler(s *discordgo.Session, i *discordgo.I
 		return
 	case "<<":
 		p.Index = 0
-		components = ButtonsFirstPage()
+		components = ButtonsFirstPage(p.deleteButton)
 		nextMessage := p.Pages[p.Index]
 		s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
 			Type: discordgo.InteractionResponseUpdateMessage,
@@ -183,7 +202,7 @@ func (p *Paginator) defaultPaginatorHandler(s *discordgo.Session, i *discordgo.I
 	case "<":
 		p.Index--
 		if p.first() {
-			components = ButtonsFirstPage()
+			components = ButtonsFirstPage(p.deleteButton)
 		}
 		nextMessage := p.Pages[p.Index]
 		s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
@@ -263,6 +282,7 @@ func (p *Paginator) defaultPaginatorHandler(s *discordgo.Session, i *discordgo.I
 func (p *Paginator) first() bool {
 	return p.Index == 0
 }
+
 func (p *Paginator) last() bool {
 	return p.Index == len(p.Pages)-1
 }
@@ -283,6 +303,7 @@ func (p *Paginator) outOfBounds(i int) bool {
 	return i >= len(p.Pages) || i < 0
 }
 
+// Footer will contain page # index/total for each page in the paginator
 func (p *Paginator) SetPageFooters() {
 	for index, msg := range p.Pages {
 		txt := fmt.Sprintf("#[%d / %d]", index+1, len(p.Pages))

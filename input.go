@@ -27,16 +27,14 @@ func GetInput(s *discordgo.Session, channelID, userID, message string, timeout t
 	}
 }
 
-// your message must already have the options, with the custom ID having the choice selected, these MUST be unique
+// Your message must already have the options, with the custom ID having the choice selected, these MUST be unique
 func GetInputFromInteraction(s *discordgo.Session, channelID, userID string, message *discordgo.MessageSend, timeout time.Duration) (string, error) {
 	msg, err := s.ChannelMessageSendComplex(channelID, message)
 	if err != nil {
 		return "", err
 	}
 
-	//components := msg.Components[0].(*discordgo.ActionsRow).Components
 	newComponents := []discordgo.MessageComponent{}
-
 	currActionRow := discordgo.ActionsRow{}
 	mainComponents := []discordgo.MessageComponent{}
 
@@ -74,11 +72,11 @@ func GetInputFromInteraction(s *discordgo.Session, channelID, userID string, mes
 				Content:    &msg.Content,
 				Components: mainComponents,
 				Embeds:     msg.Embeds,
-
-				ID:      msg.ID,
-				Channel: msg.ChannelID,
+				ID:         msg.ID,
+				Channel:    msg.ChannelID,
 			})
 			return i.MessageComponentData().CustomID, nil
+
 		case <-timeoutChan:
 			for _, mainComponent := range msg.Components {
 				components := mainComponent.(*discordgo.ActionsRow).Components
@@ -96,9 +94,8 @@ func GetInputFromInteraction(s *discordgo.Session, channelID, userID string, mes
 				Content:    &msg.Content,
 				Components: mainComponents,
 				Embeds:     msg.Embeds,
-
-				ID:      msg.ID,
-				Channel: msg.ChannelID,
+				ID:         msg.ID,
+				Channel:    msg.ChannelID,
 			})
 			return "", fmt.Errorf("timed out")
 		}
