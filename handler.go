@@ -64,6 +64,7 @@ func (p *Paginator) AddButtonHandler(ses *discordgo.Session /*msg *discordgo.Mes
 				callback(s, i)
 			}
 		})
+		p.Unlock()
 		return nil
 	}
 	p.Lock()
